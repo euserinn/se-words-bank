@@ -7,6 +7,7 @@ import { Calendar } from "@/components/calendar"
 import { WordInput } from "@/components/word-input"
 import { WordList } from "@/components/word-list"
 import { DetailsPanel } from "@/components/details-panel"
+import { PracticeMode } from "@/components/practice-mode"
 import { LoginPromptModal } from "@/components/login-prompt-modal"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
@@ -22,6 +23,7 @@ interface Word {
   meaning: string
   date: string
   group_id: string | null
+  correct_count?: number
 }
 
 // 데모 데이터
@@ -37,7 +39,7 @@ const DEMO_GROUPS: Group[] = [
 
 const today = new Date().toISOString().split("T")[0]
 const DEMO_WORDS: Word[] = [
-  { id: "demo-w1", word: "GPS 좌표", meaning: "GPS coordinates", date: today, group_id: "demo-1" },
+  { id: "demo-w1", word: "GPS 좌표", meaning: "GPS coordinates", date: today, group_id: "demo-1", correct_count: 0 },
 ]
 
 export default function Home() {
@@ -49,6 +51,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [searchQuery, setSearchQuery] = useState("")
   const [showDetailsPanel, setShowDetailsPanel] = useState(false)
+  const [showPracticeMode, setShowPracticeMode] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [isDemo, setIsDemo] = useState(true)
   const [localWords, setLocalWords] = useState<Word[]>([])
@@ -162,10 +165,34 @@ export default function Home() {
         word,
         meaning: meaning || "뜻 없음",
         date: dateStr,
-        group_id: selectedGroupId
+        group_id: selectedGroupId,
+        correct_count: 0
       }
       setLocalWords(prev => [...prev, newWord])
       setShowLoginPrompt(true)
+    }
+  }
+
+  const handleUpdateCorrectCount = async (wordId: string, count: number) => {
+    if (user) {
+      // 로그인된 경우 DB 업데이트
+      await fetch("/api/words", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wordId, correctCount: count }),
+      })
+      // 로컬 상태도 업데이트
+      setWords(prev => prev.map(w => 
+        w.id === wordId ? { ...w, correct_count: count } : w
+      ))
+    } else {
+      // 데모/비로그인 모드에서는 로컬 상태만 업데이트
+      setWords(prev => prev.map(w => 
+        w.id === wordId ? { ...w, correct_count: count } : w
+      ))
+      setLocalWords(prev => prev.map(w => 
+        w.id === wordId ? { ...w, correct_count: count } : w
+      ))
     }
   }
 
@@ -177,19 +204,27 @@ export default function Home() {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
     setShowDetailsPanel(true)
+    setShowPracticeMode(false)
   }
 
   const handleWordListClick = () => {
     setShowDetailsPanel(true)
+    setShowPracticeMode(false)
+  }
+
+  const handleStartPractice = () => {
+    setShowDetailsPanel(false)
+    setShowPracticeMode(true)
   }
 
   const handleClosePanel = () => {
     setShowDetailsPanel(false)
+    setShowPracticeMode(false)
   }
 
   const handleBackgroundClick = () => {
-    if (showDetailsPanel) {
-      setShowDetailsPanel(false)
+    if (showDetailsPanel || showPracticeMode) {
+      handleClosePanel()
     }
   }
 
@@ -241,6 +276,7 @@ export default function Home() {
         onSelectDate={(date) => {
           setSelectedDate(new Date(date))
           setShowDetailsPanel(true)
+          setShowPracticeMode(false)
         }}
       />
 
@@ -302,6 +338,17 @@ export default function Home() {
           words={wordsForSelectedDate}
           selectedDate={selectedDate}
           onClose={handleClosePanel}
+          onStartPractice={handleStartPractice}
+        />
+      )}
+
+      {/* Practice Mode */}
+      {showPracticeMode && (
+        <PracticeMode
+          words={wordsForSelectedDate}
+          selectedDate={selectedDate}
+          onClose={handleClosePanel}
+          onUpdateCorrectCount={handleUpdateCorrectCount}
         />
       )}
 
