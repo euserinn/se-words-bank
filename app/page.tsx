@@ -38,18 +38,7 @@ const DEMO_GROUPS: Group[] = [
   { id: "demo-2", name: "생활용어" },
 ]
 
-const today = new Date().toISOString().split("T")[0]
-const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]
-const twoDaysAgo = new Date(Date.now() - 86400000 * 2).toISOString().split("T")[0]
-
-const DEMO_WORDS: Word[] = [
-  { id: "demo-w1", word: "GPS 좌표", meaning: "GPS coordinates", date: today, group_id: "demo-1", correct_count: 0 },
-  { id: "demo-w2", word: "매출", meaning: "Revenue", date: today, group_id: "demo-1", correct_count: 1 },
-  { id: "demo-w3", word: "협업", meaning: "Collaboration", date: today, group_id: "demo-1", correct_count: 3 },
-  { id: "demo-w4", word: "커피", meaning: "Coffee", date: yesterday, group_id: "demo-2", correct_count: 2 },
-  { id: "demo-w5", word: "점심", meaning: "Lunch", date: yesterday, group_id: "demo-2", correct_count: 3 },
-  { id: "demo-w6", word: "회의실", meaning: "Meeting room", date: twoDaysAgo, group_id: "demo-1", correct_count: 0 },
-]
+const DEMO_WORDS: Word[] = []
 
 export default function Home() {
   const [groups, setGroups] = useState<Group[]>(DEMO_GROUPS)

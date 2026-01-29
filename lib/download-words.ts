@@ -1,5 +1,3 @@
-"use client"
-
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx"
 import { saveAs } from "file-saver"
 
