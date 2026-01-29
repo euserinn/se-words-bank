@@ -82,18 +82,34 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { wordId, correctCount } = body;
+  const { wordId, correctCount, groupId } = body;
 
-  if (!wordId || correctCount === undefined) {
+  if (!wordId) {
     return NextResponse.json(
-      { error: "wordId and correctCount are required" },
+      { error: "wordId is required" },
+      { status: 400 }
+    );
+  }
+
+  // Build update object dynamically
+  const updateData: Record<string, unknown> = {};
+  if (correctCount !== undefined) {
+    updateData.correct_count = correctCount;
+  }
+  if (groupId !== undefined) {
+    updateData.group_id = groupId;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json(
+      { error: "No update data provided" },
       { status: 400 }
     );
   }
 
   const { data, error } = await supabase
     .from("words")
-    .update({ correct_count: correctCount })
+    .update(updateData)
     .eq("id", wordId)
     .eq("user_id", user.id)
     .select()

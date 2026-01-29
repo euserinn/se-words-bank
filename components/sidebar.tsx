@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Plus, Hash, Settings, LogOut, User, Clock } from "lucide-react"
+import { Search, Plus, Hash, Settings, LogOut, User, Clock, Download, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -31,6 +31,7 @@ interface SidebarProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onSelectDate: (date: string) => void
+  onOpenGroupManagement: () => void
 }
 
 export function Sidebar({ 
@@ -43,7 +44,8 @@ export function Sidebar({
   selectedGroupId,
   searchQuery,
   onSearchChange,
-  onSelectDate
+  onSelectDate,
+  onOpenGroupManagement
 }: SidebarProps) {
   const router = useRouter()
 
@@ -105,12 +107,22 @@ export function Sidebar({
       <div className="px-3 flex-1 overflow-y-auto">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-muted-foreground tracking-wide">GROUPS</span>
-          <button
-            onClick={onAddGroup}
-            className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onOpenGroupManagement}
+              className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              title="그룹 관리 및 다운로드"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onAddGroup}
+              className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              title="그룹 추가"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="space-y-1">
           {groups.map((group) => (

@@ -9,6 +9,7 @@ import { WordList } from "@/components/word-list"
 import { DetailsPanel } from "@/components/details-panel"
 import { PracticeMode } from "@/components/practice-mode"
 import { LoginPromptModal } from "@/components/login-prompt-modal"
+import { GroupManagementModal } from "@/components/group-management-modal"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
@@ -61,6 +62,7 @@ export default function Home() {
   const [showDetailsPanel, setShowDetailsPanel] = useState(false)
   const [showPracticeMode, setShowPracticeMode] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [showGroupManagement, setShowGroupManagement] = useState(false)
   const [isDemo, setIsDemo] = useState(true)
   const [localWords, setLocalWords] = useState<Word[]>([])
 
@@ -236,6 +238,72 @@ export default function Home() {
     }
   }
 
+  const handleCreateGroup = async (name: string): Promise<string | null> => {
+    if (user) {
+      const res = await fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        fetchGroups()
+        return data.id
+      }
+      return null
+    } else {
+      const newId = `local-${Date.now()}`
+      setGroups(prev => [...prev, { id: newId, name }])
+      return newId
+    }
+  }
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (confirm("이 그룹을 삭제하시겠습니까? 그룹 내 단어는 삭제되지 않습니다.")) {
+      if (user) {
+        await fetch(`/api/groups?id=${groupId}`, { method: "DELETE" })
+        fetchGroups()
+      } else {
+        setGroups(prev => prev.filter(g => g.id !== groupId))
+      }
+    }
+  }
+
+  const handleRenameGroup = async (groupId: string, name: string) => {
+    if (user) {
+      await fetch("/api/groups", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: groupId, name }),
+      })
+      fetchGroups()
+    } else {
+      setGroups(prev => prev.map(g => g.id === groupId ? { ...g, name } : g))
+    }
+  }
+
+  const handleMoveWords = async (wordIds: string[], groupId: string) => {
+    if (user) {
+      // API로 단어 그룹 이동
+      for (const wordId of wordIds) {
+        await fetch("/api/words", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wordId, groupId }),
+        })
+      }
+      fetchWords()
+    } else {
+      // 로컬 상태 업데이트
+      setWords(prev => prev.map(w => 
+        wordIds.includes(w.id) ? { ...w, group_id: groupId } : w
+      ))
+      setLocalWords(prev => prev.map(w => 
+        wordIds.includes(w.id) ? { ...w, group_id: groupId } : w
+      ))
+    }
+  }
+
   const filteredWords = words.filter(w => {
     const matchesSearch = searchQuery === "" || 
       w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,6 +354,7 @@ export default function Home() {
           setShowDetailsPanel(true)
           setShowPracticeMode(false)
         }}
+        onOpenGroupManagement={() => setShowGroupManagement(true)}
       />
 
       <main className="flex-1 p-8 bg-secondary/30" onClick={(e) => e.stopPropagation()}>
@@ -363,6 +432,20 @@ export default function Home() {
       {/* Login Prompt Modal */}
       {showLoginPrompt && (
         <LoginPromptModal onClose={() => setShowLoginPrompt(false)} />
+      )}
+
+      {/* Group Management Modal */}
+      {showGroupManagement && (
+        <GroupManagementModal
+          groups={groups}
+          words={words}
+          onClose={() => setShowGroupManagement(false)}
+          onUpdateGroups={setGroups}
+          onMoveWords={handleMoveWords}
+          onCreateGroup={handleCreateGroup}
+          onDeleteGroup={handleDeleteGroup}
+          onRenameGroup={handleRenameGroup}
+        />
       )}
     </div>
   )
