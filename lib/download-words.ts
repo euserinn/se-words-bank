@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx"
-import { saveAs } from "file-saver"
+import FileSaver from "file-saver"
+const { saveAs } = FileSaver
 
 interface Word {
   id: string
