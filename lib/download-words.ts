@@ -1,6 +1,4 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx"
-import FileSaver from "file-saver"
-const { saveAs } = FileSaver
 
 interface Word {
   id: string
@@ -14,6 +12,18 @@ interface Word {
 interface Group {
   id: string
   name: string
+}
+
+// 브라우저 네이티브 다운로드 함수
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 // 알파벳/한글 첫 글자로 정렬
@@ -120,7 +130,7 @@ export async function downloadAllWords(words: Word[], filename: string = "나의
   })
   
   const blob = await Packer.toBlob(doc)
-  saveAs(blob, `${filename}.docx`)
+  downloadBlob(blob, `${filename}.docx`)
 }
 
 // 그룹별 다운로드

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Moon, Sun } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { Calendar } from "@/components/calendar"
@@ -8,10 +8,7 @@ import { WordInput } from "@/components/word-input"
 import { WordList } from "@/components/word-list"
 import { DetailsPanel } from "@/components/details-panel"
 import { PracticeMode } from "@/components/practice-mode"
-import { LoginPromptModal } from "@/components/login-prompt-modal"
 import { GroupManagementModal } from "@/components/group-management-modal"
-import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
 
 interface Group {
   id: string
@@ -38,161 +35,63 @@ const DEMO_GROUPS: Group[] = [
   { id: "demo-2", name: "생활용어" },
 ]
 
-const DEMO_WORDS: Word[] = []
-
 export default function Home() {
   const [groups, setGroups] = useState<Group[]>(DEMO_GROUPS)
-  const [words, setWords] = useState<Word[]>(DEMO_WORDS)
-  const [user, setUser] = useState<User | null>(null)
+  const [words, setWords] = useState<Word[]>([])
   const [isDark, setIsDark] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [searchQuery, setSearchQuery] = useState("")
   const [showDetailsPanel, setShowDetailsPanel] = useState(false)
   const [showPracticeMode, setShowPracticeMode] = useState(false)
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [showGroupManagement, setShowGroupManagement] = useState(false)
-  const [isDemo, setIsDemo] = useState(true)
-  const [localWords, setLocalWords] = useState<Word[]>([])
 
-  const fetchGroups = useCallback(async () => {
-    if (!user) return
-    const res = await fetch("/api/groups")
-    if (res.ok) {
-      const data = await res.json()
-      setGroups(data)
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedWords = localStorage.getItem("words")
+    const savedGroups = localStorage.getItem("groups")
+    if (savedWords) {
+      setWords(JSON.parse(savedWords))
     }
-  }, [user])
+    if (savedGroups) {
+      setGroups(JSON.parse(savedGroups))
+    }
+  }, [])
 
-  const fetchWords = useCallback(async () => {
-    if (!user) return
-    const params = new URLSearchParams()
-    if (selectedGroupId) {
-      params.set("groupId", selectedGroupId)
-    }
-    const res = await fetch(`/api/words?${params.toString()}`)
-    if (res.ok) {
-      const data = await res.json()
-      setWords(data)
-    }
-  }, [user, selectedGroupId])
+  // Save to localStorage when data changes
+  useEffect(() => {
+    localStorage.setItem("words", JSON.stringify(words))
+  }, [words])
 
   useEffect(() => {
-    const supabase = createClient()
-    
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      if (user) {
-        setIsDemo(false)
-      }
-    })
+    localStorage.setItem("groups", JSON.stringify(groups))
+  }, [groups])
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        setIsDemo(false)
-      } else {
-        setIsDemo(true)
-        setGroups(DEMO_GROUPS)
-        setWords([...DEMO_WORDS, ...localWords])
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [localWords])
-
-  useEffect(() => {
-    if (user && !isDemo) {
-      fetchGroups()
-      fetchWords()
-    }
-  }, [user, isDemo, fetchGroups, fetchWords])
-
-  // 데모 모드일 때 로컬 단어 추가
-  useEffect(() => {
-    if (isDemo) {
-      setWords([...DEMO_WORDS, ...localWords])
-    }
-  }, [localWords, isDemo])
-
-  const handleAddGroup = async () => {
-    if (!user && !isDemo) {
-      setShowLoginPrompt(true)
-      return
-    }
-    
+  const handleAddGroup = () => {
     const name = prompt("새 그룹 이름을 입력하세요:")
     if (name?.trim()) {
-      if (user) {
-        const res = await fetch("/api/groups", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim() }),
-        })
-        if (res.ok) {
-          fetchGroups()
-        }
-      } else {
-        // 데모 모드에서 로컬로 그룹 추가
-        setGroups(prev => [...prev, { id: `local-${Date.now()}`, name: name.trim() }])
-      }
+      const newGroup = { id: `group-${Date.now()}`, name: name.trim() }
+      setGroups(prev => [...prev, newGroup])
     }
   }
 
-  const handleAddWord = async (word: string, meaning: string) => {
+  const handleAddWord = (word: string, meaning: string) => {
     const dateStr = selectedDate.toISOString().split("T")[0]
-    
-    if (user) {
-      // 로그인된 경우 DB에 저장
-      const res = await fetch("/api/words", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          word, 
-          meaning: meaning || "뜻 없음",
-          groupId: selectedGroupId,
-          date: dateStr
-        }),
-      })
-      if (res.ok) {
-        fetchWords()
-      }
-    } else {
-      // 비로그인 시 로컬에 임시 저장하고 로그인 프롬프트 표시
-      const newWord: Word = {
-        id: `local-${Date.now()}`,
-        word,
-        meaning: meaning || "뜻 없음",
-        date: dateStr,
-        group_id: selectedGroupId,
-        correct_count: 0
-      }
-      setLocalWords(prev => [...prev, newWord])
-      setShowLoginPrompt(true)
+    const newWord: Word = {
+      id: `word-${Date.now()}`,
+      word,
+      meaning: meaning || "뜻 없음",
+      date: dateStr,
+      group_id: selectedGroupId,
+      correct_count: 0
     }
+    setWords(prev => [...prev, newWord])
   }
 
-  const handleUpdateCorrectCount = async (wordId: string, count: number) => {
-    if (user) {
-      // 로그인된 경우 DB 업데이트
-      await fetch("/api/words", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wordId, correctCount: count }),
-      })
-      // 로컬 상태도 업데이트
-      setWords(prev => prev.map(w => 
-        w.id === wordId ? { ...w, correct_count: count } : w
-      ))
-    } else {
-      // 데모/비로그인 모드에서는 로컬 상태만 업데이트
-      setWords(prev => prev.map(w => 
-        w.id === wordId ? { ...w, correct_count: count } : w
-      ))
-      setLocalWords(prev => prev.map(w => 
-        w.id === wordId ? { ...w, correct_count: count } : w
-      ))
-    }
+  const handleUpdateCorrectCount = (wordId: string, count: number) => {
+    setWords(prev => prev.map(w => 
+      w.id === wordId ? { ...w, correct_count: count } : w
+    ))
   }
 
   const toggleTheme = () => {
@@ -227,77 +126,34 @@ export default function Home() {
     }
   }
 
-  const handleCreateGroup = async (name: string): Promise<string | null> => {
-    if (user) {
-      const res = await fetch("/api/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        fetchGroups()
-        return data.id
-      }
-      return null
-    } else {
-      const newId = `local-${Date.now()}`
-      setGroups(prev => [...prev, { id: newId, name }])
-      return newId
-    }
+  const handleCreateGroup = (name: string): Promise<string | null> => {
+    const newId = `group-${Date.now()}`
+    setGroups(prev => [...prev, { id: newId, name }])
+    return Promise.resolve(newId)
   }
 
-  const handleDeleteGroup = async (groupId: string) => {
+  const handleDeleteGroup = (groupId: string) => {
     if (confirm("이 그룹을 삭제하시겠습니까? 그룹 내 단어는 삭제되지 않습니다.")) {
-      if (user) {
-        await fetch(`/api/groups?id=${groupId}`, { method: "DELETE" })
-        fetchGroups()
-      } else {
-        setGroups(prev => prev.filter(g => g.id !== groupId))
-      }
+      setGroups(prev => prev.filter(g => g.id !== groupId))
     }
   }
 
-  const handleRenameGroup = async (groupId: string, name: string) => {
-    if (user) {
-      await fetch("/api/groups", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: groupId, name }),
-      })
-      fetchGroups()
-    } else {
-      setGroups(prev => prev.map(g => g.id === groupId ? { ...g, name } : g))
-    }
+  const handleRenameGroup = (groupId: string, name: string) => {
+    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, name } : g))
   }
 
-  const handleMoveWords = async (wordIds: string[], groupId: string) => {
-    if (user) {
-      // API로 단어 그룹 이동
-      for (const wordId of wordIds) {
-        await fetch("/api/words", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wordId, groupId }),
-        })
-      }
-      fetchWords()
-    } else {
-      // 로컬 상태 업데이트
-      setWords(prev => prev.map(w => 
-        wordIds.includes(w.id) ? { ...w, group_id: groupId } : w
-      ))
-      setLocalWords(prev => prev.map(w => 
-        wordIds.includes(w.id) ? { ...w, group_id: groupId } : w
-      ))
-    }
+  const handleMoveWords = (wordIds: string[], groupId: string) => {
+    setWords(prev => prev.map(w => 
+      wordIds.includes(w.id) ? { ...w, group_id: groupId } : w
+    ))
   }
 
   const filteredWords = words.filter(w => {
     const matchesSearch = searchQuery === "" || 
       w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
       w.meaning.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
+    const matchesGroup = selectedGroupId === null || w.group_id === selectedGroupId
+    return matchesSearch && matchesGroup
   })
 
   const wordsForSelectedDate = filteredWords.filter(w => 
@@ -320,19 +176,13 @@ export default function Home() {
     return { date, label: `${month}.${day}(${dayName})` }
   })
 
-  // 사용자 표시용 정보
-  const displayUser = user ? {
-    email: user.email || "",
-    name: user.user_metadata?.name || user.email?.split("@")[0] || ""
-  } : (isDemo ? DEMO_USER : null)
-
   return (
     <div className="flex min-h-screen bg-background" onClick={handleBackgroundClick}>
       <Sidebar 
         groups={groups} 
         recentEntries={recentEntries}
-        user={displayUser}
-        isDemo={isDemo}
+        user={DEMO_USER}
+        isDemo={true}
         onAddGroup={handleAddGroup}
         onSelectGroup={setSelectedGroupId}
         selectedGroupId={selectedGroupId}
@@ -416,11 +266,6 @@ export default function Home() {
           onClose={handleClosePanel}
           onUpdateCorrectCount={handleUpdateCorrectCount}
         />
-      )}
-
-      {/* Login Prompt Modal */}
-      {showLoginPrompt && (
-        <LoginPromptModal onClose={() => setShowLoginPrompt(false)} />
       )}
 
       {/* Group Management Modal */}

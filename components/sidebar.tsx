@@ -1,9 +1,6 @@
 "use client"
 
-import { Search, Plus, Hash, Settings, LogOut, User, Clock, Download, Sparkles } from "lucide-react"
-import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { Search, Plus, Hash, Settings, User, Clock } from "lucide-react"
 
 interface Group {
   id: string
@@ -47,15 +44,6 @@ export function Sidebar({
   onSelectDate,
   onOpenGroupManagement
 }: SidebarProps) {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
-  }
-
   return (
     <aside className="w-60 h-screen border-r border-border flex flex-col bg-background">
       {/* Header Icons */}
@@ -125,6 +113,17 @@ export function Sidebar({
           </div>
         </div>
         <div className="space-y-1">
+          <button
+            onClick={() => onSelectGroup(null)}
+            className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${
+              selectedGroupId === null 
+                ? "bg-secondary text-foreground" 
+                : "text-foreground hover:bg-secondary"
+            }`}
+          >
+            <Hash className="w-4 h-4 text-muted-foreground" />
+            전체
+          </button>
           {groups.map((group) => (
             <button
               key={group.id}
@@ -164,9 +163,9 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer - User Info */}
       <div className="p-3 border-t border-border">
-        {user ? (
+        {user && (
           <div className="space-y-1">
             <div className="flex items-center gap-2 px-2 py-1.5 text-sm">
               <User className="w-4 h-4 text-muted-foreground" />
@@ -178,33 +177,7 @@ export function Sidebar({
             <div className="text-xs text-muted-foreground px-2 truncate">
               {user.email}
             </div>
-            {!isDemo && (
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                로그아웃
-              </button>
-            )}
-            {isDemo && (
-              <Link 
-                href="/auth/login"
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                로그인
-              </Link>
-            )}
           </div>
-        ) : (
-          <Link 
-            href="/auth/sign-up"
-            className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-            회원가입
-          </Link>
         )}
       </div>
     </aside>
