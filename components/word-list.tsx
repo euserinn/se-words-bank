@@ -25,7 +25,7 @@ export function WordList({ words, selectedDate, onPracticeClick }: WordListProps
     return null
   }
 
-  const masteredCount = words.filter(w => (w.correct_count || 0) >= 3).length
+  const masteredCount = words.filter(w => (w.correct_count || 0) >= 4).length
 
   return (
     <div 
@@ -53,7 +53,7 @@ export function WordList({ words, selectedDate, onPracticeClick }: WordListProps
       {/* Word List */}
       <div className="space-y-3">
         {words.map((word) => {
-          const isMastered = (word.correct_count || 0) >= 3
+          const isMastered = (word.correct_count || 0) >= 4
           const progress = word.correct_count || 0
           
           return (

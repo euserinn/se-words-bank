@@ -33,7 +33,7 @@ function generateHint(text: string): string {
 }
 
 export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCount }: PracticeModeProps) {
-  // 아직 외우지 않은 단어들만 (correct_count < 3)
+  // 아직 외우지 않은 단어들만 (correct_count < 4)
   const [practiceWords, setPracticeWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showMeaning, setShowMeaning] = useState(false) // true: 뜻을 보여주고 단어 입력, false: 단어를 보여주고 뜻 입력
@@ -45,7 +45,7 @@ export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCoun
 
   useEffect(() => {
     // 외우지 않은 단어들만 필터링하고 랜덤 섞기
-    const unmemorized = words.filter(w => (w.correct_count || 0) < 3)
+    const unmemorized = words.filter(w => (w.correct_count || 0) < 4)
     const shuffled = [...unmemorized].sort(() => Math.random() - 0.5)
     setPracticeWords(shuffled)
     
@@ -96,19 +96,19 @@ export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCoun
       } else {
         // 모든 단어 완료 - 아직 외우지 않은 단어가 있는지 확인
         const stillUnmemorized = practiceWords.filter(w => 
-          (correctCounts[w.id] || 0) < 3 && w.id !== currentWord.id
+          (correctCounts[w.id] || 0) < 4 && w.id !== currentWord.id
         )
-        if (isCorrect && newCount >= 3) {
+        if (isCorrect && newCount >= 4) {
           // 현재 단어도 외움 처리됨
         }
         
-        if (stillUnmemorized.length > 0 || (!isCorrect || (correctCounts[currentWord.id] || 0) + (isCorrect ? 1 : 0) < 3)) {
+        if (stillUnmemorized.length > 0 || (!isCorrect || (correctCounts[currentWord.id] || 0) + (isCorrect ? 1 : 0) < 4)) {
           // 아직 외우지 않은 단어가 있으면 다시 섞어서 시작
           const remaining = practiceWords.filter(w => {
             const count = w.id === currentWord.id 
               ? (isCorrect ? (correctCounts[w.id] || 0) + 1 : 0)
               : (correctCounts[w.id] || 0)
-            return count < 3
+            return count < 4
           })
           if (remaining.length > 0) {
             const shuffled = [...remaining].sort(() => Math.random() - 0.5)
@@ -126,7 +126,7 @@ export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCoun
   }
 
   const handleRestart = () => {
-    const unmemorized = words.filter(w => (correctCounts[w.id] || 0) < 3)
+    const unmemorized = words.filter(w => (correctCounts[w.id] || 0) < 4)
     const shuffled = [...unmemorized].sort(() => Math.random() - 0.5)
     setPracticeWords(shuffled)
     setCurrentIndex(0)
@@ -146,7 +146,7 @@ export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCoun
   const currentCorrectCount = currentWord ? (correctCounts[currentWord.id] || 0) : 0
 
   // 전체 진행률
-  const totalMemorized = Object.values(correctCounts).filter(c => c >= 3).length
+  const totalMemorized = Object.values(correctCounts).filter(c => c >= 4).length
   const totalWords = words.length
 
   if (practiceWords.length === 0 || isComplete) {
@@ -225,10 +225,10 @@ export function PracticeMode({ words, selectedDate, onClose, onUpdateCorrectCoun
       <div className="mb-6 p-4 bg-secondary/50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-muted-foreground">현재 단어 정답 횟수</span>
-          <span className="text-sm font-medium">{currentCorrectCount}/3</span>
+          <span className="text-sm font-medium">{currentCorrectCount}/4</span>
         </div>
         <div className="flex gap-1">
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2, 3].map(i => (
             <div 
               key={i}
               className={`flex-1 h-2 rounded-full transition-colors ${
