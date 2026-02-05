@@ -94,6 +94,10 @@ export default function Home() {
     ))
   }
 
+  const handleDeleteWord = (wordId: string) => {
+    setWords(prev => prev.filter(w => w.id !== wordId))
+  }
+
   const toggleTheme = () => {
     setIsDark(!isDark)
     document.documentElement.classList.toggle("dark")
@@ -239,6 +243,7 @@ export default function Home() {
           <WordList 
             words={wordsForSelectedDate}
             selectedDate={selectedDate}
+            onDeleteWord={handleDeleteWord}
           />
         </div>
 

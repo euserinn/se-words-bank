@@ -1,6 +1,6 @@
 "use client"
 
-import { Play, Circle, CheckCircle2 } from "lucide-react"
+import { Play, Circle, CheckCircle2, Trash2 } from "lucide-react"
 
 interface Word {
   id: string
@@ -15,9 +15,10 @@ interface WordListProps {
   words: Word[]
   selectedDate: Date
   onPracticeClick?: () => void
+  onDeleteWord?: (wordId: string) => void
 }
 
-export function WordList({ words, selectedDate, onPracticeClick }: WordListProps) {
+export function WordList({ words, selectedDate, onPracticeClick, onDeleteWord }: WordListProps) {
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   const dateStr = `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}`
 
@@ -59,7 +60,7 @@ export function WordList({ words, selectedDate, onPracticeClick }: WordListProps
           return (
             <div 
               key={word.id}
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 group"
             >
               {isMastered ? (
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -71,9 +72,22 @@ export function WordList({ words, selectedDate, onPracticeClick }: WordListProps
                   )}
                 </div>
               )}
-              <span className={`text-sm ${isMastered ? 'text-green-600' : 'text-foreground'}`}>
+              <span className={`text-sm flex-1 ${isMastered ? 'text-green-600' : 'text-foreground'}`}>
                 {word.word} : {word.meaning}
               </span>
+              {onDeleteWord && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`"${word.word}"를 삭제하시겠습니까?`)) {
+                      onDeleteWord(word.id)
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              )}
             </div>
           )
         })}

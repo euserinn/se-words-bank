@@ -26,8 +26,8 @@ export function DetailsPanel({ words, selectedDate, onClose, onStartPractice }: 
   const dayOfWeek = dayNames[selectedDate.getDay()]
   const dateStr = `${month}.${day}(${dayOfWeek})`
 
-  // 외운 단어 개수 (correct_count >= 3)
-  const memorizedCount = words.filter(w => (w.correct_count || 0) >= 3).length
+  // 외운 단어 개수 (correct_count >= 4)
+  const memorizedCount = words.filter(w => (w.correct_count || 0) >= 4).length
 
   return (
     <div 
@@ -71,7 +71,7 @@ export function DetailsPanel({ words, selectedDate, onClose, onStartPractice }: 
       {words.length > 0 ? (
         <div className="space-y-2">
           {words.map((word) => {
-            const isMemorized = (word.correct_count || 0) >= 3
+            const isMemorized = (word.correct_count || 0) >= 4
             return (
               <div 
                 key={word.id}
@@ -88,7 +88,7 @@ export function DetailsPanel({ words, selectedDate, onClose, onStartPractice }: 
                   </span>
                   {!isMemorized && (word.correct_count || 0) > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      정답 {word.correct_count}/3
+                      정답 {word.correct_count}/4
                     </p>
                   )}
                 </div>
