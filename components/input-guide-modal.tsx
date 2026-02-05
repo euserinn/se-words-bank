@@ -7,9 +7,10 @@ interface InputGuideModalProps {
   onClose: () => void
   onSubmit: (text: string) => void
   initialValue?: string
+  onMouseLeave?: () => void
 }
 
-export function InputGuideModal({ onClose, onSubmit, initialValue = "" }: InputGuideModalProps) {
+export function InputGuideModal({ onClose, onSubmit, initialValue = "", onMouseLeave }: InputGuideModalProps) {
   const [value, setValue] = useState(initialValue)
   const [typingDemo, setTypingDemo] = useState("")
   const [showCursor, setShowCursor] = useState(true)
@@ -67,6 +68,9 @@ export function InputGuideModal({ onClose, onSubmit, initialValue = "" }: InputG
       <div 
         className="bg-background rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative"
         onClick={(e) => e.stopPropagation()}
+        onMouseLeave={() => {
+          if (onMouseLeave) onMouseLeave()
+        }}
       >
         <button
           onClick={onClose}

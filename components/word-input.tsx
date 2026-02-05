@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Plus, Send } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { InputGuideModal } from "./input-guide-modal"
 
 interface WordInputProps {
@@ -13,6 +13,15 @@ export function WordInput({ onAddWord }: WordInputProps) {
   const [value, setValue] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showModal, setShowModal] = useState(false)
+
+  // 처음 방문 시 자동으로 팝업 표시
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem("hasSeenInputGuide")
+    if (!hasSeenGuide) {
+      setShowModal(true)
+      localStorage.setItem("hasSeenInputGuide", "true")
+    }
+  }, [])
 
   const handleSubmit = async () => {
     if (!value.trim() || isSubmitting) return
@@ -61,6 +70,7 @@ export function WordInput({ onAddWord }: WordInputProps) {
         <InputGuideModal
           onClose={() => setShowModal(false)}
           onSubmit={handleModalSubmit}
+          onMouseLeave={() => setShowModal(false)}
         />
       )}
       <div className="mt-16 text-center">
@@ -69,8 +79,8 @@ export function WordInput({ onAddWord }: WordInputProps) {
         </h3>
       <div className="max-w-lg mx-auto">
         <div 
-          className="flex items-center gap-3 bg-card rounded-full px-4 py-3 shadow-sm border border-border/50 cursor-pointer hover:border-foreground/30 transition-colors"
-          onClick={() => setShowModal(true)}
+          className="flex items-center gap-3 bg-card rounded-full px-4 py-3 shadow-sm border border-border/50 hover:border-foreground/30 transition-colors"
+          onMouseEnter={() => setShowModal(true)}
         >
           <Plus className="w-5 h-5 text-muted-foreground" />
           <input
@@ -78,10 +88,9 @@ export function WordInput({ onAddWord }: WordInputProps) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setShowModal(true)}
             placeholder="apple : 사과..."
             disabled={isSubmitting}
-            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed cursor-pointer"
+            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed"
             readOnly
           />
             <button
